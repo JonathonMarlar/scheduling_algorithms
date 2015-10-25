@@ -66,12 +66,21 @@ int main(void)
             job_queue[queue_size].wait_time = temp.wait_time;
             queue_size = queue_size + 1;
             job_queue = realloc(job_queue, (queue_size + 1) * sizeof(JOB));
-            fscanf(inf, "%s %d %d %d",
+            if (fscanf(inf, "%s %d %d %d",
                 temp.name,
                 &temp.arrival_time,
                 &temp.service_time,
-                &temp.priority_level);
-            temp.wait_time = 0;
+                &temp.priority_level) != EOF)
+            {
+                temp.wait_time = 0;
+            }
+            else
+                {
+                    // it's EOF, so destroy temp
+                    temp.arrival_time = 0;
+                    temp.service_time = 0;
+                    temp.priority_level = 0;
+                }
             fgetc(inf);
         }
 
