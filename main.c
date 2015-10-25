@@ -19,11 +19,12 @@ int main(void)
     // Initialization
     FILE *inf            = fopen("in.txt", "r");
     JOB  temp;
-    fscanf(inf, "%s %d %d %d\n",
+    fscanf(inf, "%s %d %d %d",
         temp.name,
         &temp.arrival_time,
         &temp.service_time,
         &temp.priority_level);
+    fgetc(inf);
     temp.wait_time = 0;
     JOB  *job_queue      = malloc(sizeof(JOB));
     int  queue_size      = 0;
@@ -50,6 +51,7 @@ int main(void)
                     job_queue[current_job].arrival_time,
                     job_queue[current_job].wait_time,
                     clock_time);
+                current_job = current_job + 1;
                 cpu_free = true;
             }
         }
@@ -62,33 +64,43 @@ int main(void)
             job_queue[queue_size].service_time = temp.service_time;
             job_queue[queue_size].priority_level = temp.priority_level;
             job_queue[queue_size].wait_time = temp.wait_time;
-            realloc(job_queue, sizeof(JOB));
             queue_size = queue_size + 1;
-            fscanf(inf, "%s %d %d %d\n",
+            job_queue = realloc(job_queue, (queue_size + 1) * sizeof(JOB));
+            fscanf(inf, "%s %d %d %d",
                 temp.name,
                 &temp.arrival_time,
                 &temp.service_time,
                 &temp.priority_level);
             temp.wait_time = 0;
+            fgetc(inf);
         }
 
         // Check if CPU is free
-        if (cpu_free)
+        if (cpu_free && current_job < queue_size)
         {
-            current_job = current_job + 1;
             cpu_free = false;
         }
 
         // Increase wait time for every job in queue
-        for (int i = 0; i < queue_size; i = i + 1)
+        for (int i = current_job + 1; i < queue_size; i = i + 1)
         {
-            if (current_job != i)
-                job_queue[i].wait_time = job_queue[i].wait_time + 1;
+            job_queue[i].wait_time = job_queue[i].wait_time + 1;
         }
 
+        /*
+        // debug
+        printf("Current Job: %d, Queue Size: %d, Clock Time: %d\n\n", current_job, queue_size, clock_time);
+        for (int i = 0; i < queue_size; i++)
+        {
+            printf("Job Name: %s,\n Arrival time: %d,\n service time: %d,\n priority: %d,\n wait time: %d\n\n",
+                job_queue[i].name, job_queue[i].arrival_time, job_queue[i].service_time, job_queue[i].priority_level, job_queue[i].wait_time);
+        }
+        */
         // increase clock cycle
         clock_time = clock_time + 1;
     }
 
     free(job_queue);
+
+    return 0;
 }
