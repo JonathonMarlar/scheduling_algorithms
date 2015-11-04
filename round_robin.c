@@ -4,8 +4,8 @@
 #include <string.h>
 
 #define NAME_LENGTH 2
-#define CLOCK_MAX 200
-#define TIME_QUANTUM 10
+#define CLOCK_TIME 300
+#define QUANTUM_T 10
 
 typedef struct _job
 {
@@ -32,11 +32,11 @@ int main(void)
     int  queue_size      = 0;
     int  current_job     = 0;
     int  clock_time      = 0;
-    int  time_q          = TIME_QUANTUM;
+    int  time_q          = QUANTUM_T;
     bool cpu_free        = true;
 
     // Main clock cycle loop
-    while (clock_time < CLOCK_MAX)
+    while (clock_time < CLOCK_TIME)
     {
         // Check job completion in CPU
         if (cpu_free == false)
@@ -56,18 +56,22 @@ int main(void)
                     clock_time);
                 current_job = current_job + 1;
                 if (current_job >= queue_size)
+                {
                     current_job = 0;
-                time_q = TIME_QUANTUM;
+                }
                 cpu_free = true;
             }
-            // decrease time quantum
+
+            // decrease the time quantum
             time_q = time_q - 1;
             if (time_q == 0)
             {
+                // free the CPU
                 current_job = current_job + 1;
                 if (current_job >= queue_size)
+                {
                     current_job = 0;
-                time_q = TIME_QUANTUM;
+                }
                 cpu_free = true;
             }
         }
@@ -101,22 +105,23 @@ int main(void)
         }
 
         // Check if CPU is free
-        int c = current_job + 1;
-        if (c > queue_size)
-            c = 0;
-        while (job_queue[c].service_time == 0)
-        {
-            c = c + 1;
-            if (c > queue_size)
-                c = 0;
-            if (c == current_job)
-                break;
-            if (job_queue[c].service_time != 0)
-                current_job = c;
-        }
         if (cpu_free && current_job < queue_size && job_queue[current_job].service_time != 0)
         {
             cpu_free = false;
+        }
+        else if (job_queue[current_job].service_time == 0)
+        {
+            int c = current_job;
+            while (job_queue[c].service_time == 0)
+            {
+                c = c + 1;
+                if (c > queue_size)
+                    c = 0;
+                // if we've looped around once and there's no jobs, quit
+                if (c == current_job)
+                    break;
+            }
+            current_job = c;
         }
 
         // Increase wait time for every job in queue
@@ -125,25 +130,22 @@ int main(void)
             if (i != current_job && job_queue[i].service_time != 0)
                 job_queue[i].wait_time = job_queue[i].wait_time + 1;
         }
-
+        //printf("Current Job: %d\n\n", current_job);
+        /*
+        // debug
+        printf("Current Job: %d, Queue Size: %d, Clock Time: %d\n\n", current_job, queue_size, clock_time);
+        for (int i = 0; i < queue_size; i++)
+        {
+            printf("Job Name: %s,\n Arrival time: %d,\n service time: %d,\n priority: %d,\n wait time: %d\n\n",
+                job_queue[i].name, job_queue[i].arrival_time, job_queue[i].service_time, job_queue[i].priority_level, job_queue[i].wait_time);
+        }
+        */
         // increase clock cycle
         clock_time = clock_time + 1;
     }
 
-
-    // Debug
-    printf("Clock Time: %d\n"
-            "Current Job: %d\n"
-            "Time Quantum: %d\n"
-            "Queue Size: %d\n\n",
-            clock_time, current_job, time_q, queue_size);
-    for (int i = 0; i < queue_size; i = i + 1)
-    {
-        printf("Name: %s\n"
-            "Service Time: %d\n\n",
-            job_queue[i].name, job_queue[i].service_time);
-    }
     free(job_queue);
 
     return 0;
 }
+
